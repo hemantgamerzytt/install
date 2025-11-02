@@ -9,7 +9,7 @@ set -e
 print_header() {
 clear
 echo -e "\033[1;35m============================================================\033[0m"
-echo -e "\033[1;36m        🚀 Welcome to the HemantGamerzYT VPS Installer 🚀\033[0m"
+echo -e "\033[1;36m                 HemantGamerzYT\033[0m"
 echo -e "\033[1;35m============================================================\033[0m"
 echo
 }
