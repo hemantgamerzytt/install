@@ -1,0 +1,119 @@
+#!/bin/bash
+set -e
+
+######################################################################################
+#                                                                                    #
+# Project 'pterodactyl-installer'                                                    #
+# Custom Branding by HemantGamerzYT                                                  #
+#                                                                                    #
+######################################################################################
+
+export GITHUB_SOURCE="v1.2.0"
+export SCRIPT_RELEASE="v1.2.0"
+export GITHUB_BASE_URL="https://raw.githubusercontent.com/pterodactyl-installer/pterodactyl-installer"
+
+LOG_PATH="/var/log/pterodactyl-installer.log"
+
+# ======================================================
+#  Custom Branding Header
+# ======================================================
+clear
+echo -e "\e[1;34m====================================================\e[0m"
+echo -e "\e[1;36m             HemantGamerzYT Installer\e[0m"
+echo -e "\e[1;37m     Powered by Pterodactyl Installer v1.2.0\e[0m"
+echo -e "\e[1;34m====================================================\e[0m"
+echo
+
+sleep 2
+
+# ======================================================
+#  Check Dependencies
+# ======================================================
+if ! [ -x "$(command -v curl)" ]; then
+  echo -e "\e[1;31m* curl is required in order for this script to work.\e[0m"
+  echo -e "\e[1;31m* Install using apt (Debian) or yum/dnf (CentOS)\e[0m"
+  exit 1
+fi
+
+# Always remove lib.sh before downloading it
+[ -f /tmp/lib.sh ] && rm -rf /tmp/lib.sh
+curl -sSL -o /tmp/lib.sh "$GITHUB_BASE_URL"/master/lib/lib.sh
+# shellcheck source=lib/lib.sh
+source /tmp/lib.sh
+
+execute() {
+  echo -e "\n\n* pterodactyl-installer $(date) \n\n" >>$LOG_PATH
+
+  [[ "$1" == *"canary"* ]] && export GITHUB_SOURCE="master" && export SCRIPT_RELEASE="canary"
+  update_lib_source
+  run_ui "${1//_canary/}" |& tee -a $LOG_PATH
+
+  if [[ -n $2 ]]; then
+    echo -e -n "\e[1;36m* Installation of $1 completed.\e[0m \e[1;33mProceed to $2 installation? (y/N): \e[0m"
+    read -r CONFIRM
+    if [[ "$CONFIRM" =~ [Yy] ]]; then
+      execute "$2"
+    else
+      echo -e "\e[1;31m* Installation of $2 aborted.\e[0m"
+      exit 1
+    fi
+  fi
+}
+
+welcome() {
+  echo -e "\e[1;34mWelcome to the HemantGamerzYT Pterodactyl Installer!\e[0m"
+  echo -e "\e[1;37mThis installer will guide you through setting up your panel or wings.\e[0m"
+  echo
+}
+
+done=false
+while [ "$done" == false ]; do
+  options=(
+    "Install the panel"
+    "Install Wings"
+    "Install both [0] and [1] on the same machine"
+    "Install panel (canary dev build)"
+    "Install Wings (canary dev build)"
+    "Install both [3] and [4]"
+    "Uninstall panel or wings (canary)"
+  )
+
+  actions=(
+    "panel"
+    "wings"
+    "panel;wings"
+    "panel_canary"
+    "wings_canary"
+    "panel_canary;wings_canary"
+    "uninstall_canary"
+  )
+
+  echo -e "\e[1;34m====================================================\e[0m"
+  echo -e "\e[1;36mWhat would you like to do?\e[0m"
+  echo -e "\e[1;34m====================================================\e[0m"
+  echo
+
+  for i in "${!options[@]}"; do
+    echo -e "\e[1;37m[$i]\e[0m \e[1;34m${options[$i]}\e[0m"
+  done
+
+  echo
+  echo -ne "\e[1;36m* Input 0-$((${#actions[@]} - 1)): \e[0m"
+  read -r action
+
+  [ -z "$action" ] && echo -e "\e[1;31m* Input is required.\e[0m" && continue
+
+  valid_input=("$(for ((i = 0; i <= ${#actions[@]} - 1; i += 1)); do echo "${i}"; done)")
+  [[ ! " ${valid_input[*]} " =~ ${action} ]] && echo -e "\e[1;31m* Invalid option.\e[0m" && continue
+
+  done=true
+  IFS=";" read -r i1 i2 <<<"${actions[$action]}"
+  execute "$i1" "$i2"
+done
+
+rm -rf /tmp/lib.sh
+
+echo
+echo -e "\e[1;34m====================================================\e[0m"
+echo -e "\e[1;36m  Installation Complete - HemantGamerzYT Brand  \e[0m"
+echo -e "\e[1;34m====================================================\e[0m"
